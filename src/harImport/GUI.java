@@ -45,6 +45,7 @@ public class GUI extends JPanel {
 	public HARData harData;
 	public List<Integer> ImportedRows;
 	public List<HARData> har;
+	public SendRequest sendreq;
 	
 	public GUI(MontoyaApi api) {
 		this.api = api;
@@ -52,22 +53,22 @@ public class GUI extends JPanel {
 		setLayout(new BorderLayout(0, 0));
 		JPanel pnlTop = new JPanel();
 		pnlTop.setLayout(new BorderLayout(0, 0));
+		
+		// Setup btnImport
 		JButton btnImport = new JButton("Import HAR");
 		btnImport.setIcon(new ImageIcon(main.class.getResource("/img/import.png")));
 		btnImport.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseClicked(MouseEvent e) {
-				//Select HAR file
-				JFileChooser fileChooser = new JFileChooser();
+			public void mouseClicked(MouseEvent e) {				
+				JFileChooser fileChooser = new JFileChooser(); // Select HAR file
 				FileNameExtensionFilter filter = new FileNameExtensionFilter("HAR Files", "har");
 		        fileChooser.setFileFilter(filter);
 		        int returnValue = fileChooser.showOpenDialog(null);
-		        if (returnValue == JFileChooser.APPROVE_OPTION) {
+		        if (returnValue == JFileChooser.APPROVE_OPTION) { // If file was selected
 		            File selectedFile = fileChooser.getSelectedFile();
-		            //Parse HAR file
 		            if (table.getRowCount() >0) clear();
 		            try {
-						har = parseHARFile(selectedFile.getAbsolutePath());
+						har = parseHARFile(selectedFile.getAbsolutePath()); // Parse HAR file and store in list
 					} catch (FileNotFoundException e1) {
 						e1.printStackTrace();
 					}
@@ -75,23 +76,26 @@ public class GUI extends JPanel {
 			}
 		});
 		pnlTop.add(btnImport);
+		// End setup btnImport
+		
 		add(pnlTop, BorderLayout.NORTH);
 		tmodel = new DefaultTableModel(null,new String[] {"Method", "Status", "URL", "Date/Time", "Elapsed", "Server IP"});
+		
+		// Create context menu
 		JPopupMenu ctxMenu = new JPopupMenu("Edit");
 		JMenuItem itemint = new JMenuItem("Send Selected to Sitemap");
 		itemint.setIcon(new ImageIcon(main.class.getResource("/img/send.png")));
 		itemint.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				//Send request
+			public void actionPerformed(ActionEvent e) {				
 				if (table.getSelectedRowCount() > 1) {
-					for (int row : table.getSelectedRows()) {
+					for (int row : table.getSelectedRows()) { // Send selected requests
 						HttpRequest httpreq = HttpRequest.httpRequestFromUrl((String) table.getValueAt(row, 2).toString());
 						SendRequest sendreq = new SendRequest(httpreq,api);
 						sendreq.execute();
 					}
-				} else if (table.getSelectedRowCount() == 1) {
+				} else if (table.getSelectedRowCount() == 1) { // Send selected request
 					HttpRequest httpreq = HttpRequest.httpRequestFromUrl((String) table.getModel().getValueAt(table.getSelectedRow(), 2));
-					SendRequest sendreq = new SendRequest(httpreq,api);
+					sendreq = new SendRequest(httpreq,api);
 					sendreq.execute();		
 				}
 			}
@@ -99,11 +103,10 @@ public class GUI extends JPanel {
 		JMenuItem itemall = new JMenuItem("Send All to Sitemap");
 		itemall.setIcon(new ImageIcon(main.class.getResource("/img/sendall.png")));
 		itemall.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				//Send requests
-				for (int row=0; row<table.getRowCount(); row++) {
+			public void actionPerformed(ActionEvent e) {				
+				for (int row=0; row<table.getRowCount(); row++) { // Send all requests
 					HttpRequest httpreq = HttpRequest.httpRequestFromUrl((String) table.getValueAt(row, 2).toString());
-					SendRequest sendreq = new SendRequest(httpreq,api);
+					sendreq = new SendRequest(httpreq,api);
 					sendreq.execute();
 				}
 			}
@@ -124,11 +127,11 @@ public class GUI extends JPanel {
 		ctxMenu.add(itemint);
 		ctxMenu.add(itemall);
 		ctxMenu.add(itemclear);
+		// End Context menus
 		
 		JSplitPane splitPane = new JSplitPane();
 		splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		add(splitPane, BorderLayout.CENTER);
-		
+		add(splitPane, BorderLayout.CENTER);		
 		JPanel pnlNorth = new JPanel();
 		splitPane.setLeftComponent(pnlNorth);
 		table = new JTable();
@@ -141,38 +144,33 @@ public class GUI extends JPanel {
 		table.getColumnModel().getColumn(1).setMaxWidth(100);
 		table.getColumnModel().getColumn(2).setMinWidth(575);
 		pnlNorth.setLayout(new BorderLayout(0, 0));
-		JScrollPane pnlTable = new JScrollPane(table);
-		
+		JScrollPane pnlTable = new JScrollPane(table);		
 		pnlNorth.add(pnlTable);
 		pnlTable.setLayout(new ScrollPaneLayout());	
-		table.setComponentPopupMenu(ctxMenu);
-		
+		table.setComponentPopupMenu(ctxMenu);		
 		JTabbedPane tabbedPane_1 = new JTabbedPane(JTabbedPane.TOP);		
 		JScrollPane pnlRequest = new JScrollPane();
 		tabbedPane_1.addTab("Request", null, pnlRequest, null);		
 		JScrollPane pnlResponse = new JScrollPane();
-		tabbedPane_1.addTab("Response", null, pnlResponse, null);
-		
+		tabbedPane_1.addTab("Response", null, pnlResponse, null);		
 	    txtResponse = new JTextArea();
 		pnlResponse.setViewportView(txtResponse);
 		splitPane.setRightComponent(tabbedPane_1);
-		pnlRequest.setLayout(new ScrollPaneLayout());
-		
+		pnlRequest.setLayout(new ScrollPaneLayout());		
 		txtRequest = new JTextArea();
 		pnlRequest.setViewportView(txtRequest);
 		table.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseClicked(MouseEvent e) {
-				//Selected row
-				if (e.getClickCount() == 1) {
+			public void mouseClicked(MouseEvent e) {				
+				if (e.getClickCount() == 1) { // Get selected row
 					txtRequest.setText("");
 					txtResponse.setText("");
 					int row = table.rowAtPoint(e.getPoint());
 					int col = table.columnAtPoint(e.getPoint());
-					HARData a = har.get(row);
+					HARData a = har.get(row); // Get HARData custom data type from list
 					//Populate response/request headers
 					int r = 0;
-					for (String header : a.requestHeaders) {
+					for (String header : a.requestHeaders) { // Loop through request headers
 						String txt = txtRequest.getText();
 						if (r == 0) {
 							txtRequest.setText(txt + header.replace("name: ", "").replace("\"","").replace("value",""));
@@ -184,7 +182,7 @@ public class GUI extends JPanel {
 					}
 					txtRequest.setCaretPosition(0);
 					int s = 0;
-					for (String header : a.responseHeaders) {
+					for (String header : a.responseHeaders) { // Loop through response headers
 						String txt = txtResponse.getText();
 						if (s == 0) {
 							txtResponse.setText(txt + header.replace("name: ", "").replace("\"","").replace("value",""));
@@ -200,36 +198,39 @@ public class GUI extends JPanel {
 		});
 	}
 		
-	public void clear() {
+	public void clear() { // Clears table, har list, and text boxes
 		tmodel.setRowCount(0);
 		har.clear();
 		txtRequest.setText("");
 		txtResponse.setText(" ");
 	}
 	
+	// Function for parsing the HAR file contents and storing in a List of the HARData type
     public List<HARData> parseHARFile(String fileName) throws FileNotFoundException {
+    	// Init objects for reading HAR file
         List<HARData> harDataList = new ArrayList<>();
         JsonReader reader = Json.createReader(new FileInputStream(fileName));
         JsonObject harObject = reader.readObject();
         JsonArray entries = harObject.getJsonObject("log").getJsonArray("entries");
 
-        for (JsonObject entry : entries.getValuesAs(JsonObject.class)) {
-            JsonObject request = entry.getJsonObject("request");
+        for (JsonObject entry : entries.getValuesAs(JsonObject.class)) { // Loop through each entry
+            // Grab entry values and store to appropriate variable
+        	JsonObject request = entry.getJsonObject("request");
             JsonObject response = entry.getJsonObject("response");
-
             String url = request.getString("url");
             String method = request.getString("method");
             int statusCode = response.getInt("status");
             String datetime = entry.getString("startedDateTime");
             int elapsed = entry.getInt("time");
             String ip = entry.getString("serverIPAddress");
+            // Add a new row to the table
             this.tmodel.addRow(new Object[] {method,statusCode,url,datetime,elapsed+"ms",ip});
-            harData = new HARData(url,method,statusCode);
+            harData = new HARData(url,method,statusCode); // Instantiate harData and store values
             harData.method = method;
             harData.bodySize = String.valueOf(request.getInt("bodySize"));
             harData.httpVersion = request.getString("httpVersion");
             JsonArray headers = request.getJsonArray("headers");
-            try {
+            try { // Loop through request headers and add to harData variable
 				for (JsonValue headerValue : headers) {
 				    JsonObject header = (JsonObject) headerValue;
 				    for (Map.Entry<String, JsonValue> headerEntry : header.entrySet()) {
@@ -242,8 +243,8 @@ public class GUI extends JPanel {
 				api.logging().logToError(e.getMessage());
 			}
             JsonArray rspHeaders = response.getJsonArray("headers");
-            try {
-				for (JsonValue headerValue : rspHeaders) {
+            try { // Loop through response headers and add to harData variable
+				for (JsonValue headerValue : rspHeaders) { 
 				    JsonObject header = (JsonObject) headerValue;
 				    for (Map.Entry<String, JsonValue> headerEntry : header.entrySet()) {
 				    	String key = headerEntry.getKey();
@@ -255,14 +256,14 @@ public class GUI extends JPanel {
 				api.logging().logToError(e.getMessage());
 			}
             harData.dateTime = datetime;            
-            harDataList.add(harData);
+            harDataList.add(harData); // Add variable harData to list
         }
 
-        reader.close();
-        return harDataList;
+        reader.close(); // Close reader object
+        return harDataList; // Return complete list of HARData
     }
 	
-	
+	// Custom data type for importing HAR data
 	public class HARData {
 		public String url;
 		public String method;
@@ -271,26 +272,35 @@ public class GUI extends JPanel {
 		public String bodySize;
 		public String httpVersion;
 		public List<String> requestHeaders = new ArrayList<>();
-		public List<String> responseHeaders = new ArrayList<>();
-		
-		HARData(String url, String method, int status) {
-		}
-		
-		
+		public List<String> responseHeaders = new ArrayList<>();		
+		HARData(String url, String method, int status) {	
+			this.url = url;
+			this.method = method;
+			this.statusCode = status;
+		}	
 	}
 	
+	// Class for sending request in swingworker
 	public class SendRequest extends SwingWorker<Integer, String> {
 		HttpRequest req;
 		MontoyaApi api;
+		Boolean stop;
 
 		public SendRequest(HttpRequest req, MontoyaApi api) {
 			this.api = api;
-			this.req = req;					
+			this.req = req;	
+			this.stop = false;
 		}
 	    @Override
 	    protected Integer doInBackground() throws Exception {
-	    	api.siteMap().add(api.http().sendRequest(this.req));
+	    	// Add to Sitemap
+	    	if (!this.stop) {
+	    		api.siteMap().add(api.http().sendRequest(this.req));
+	    	}
 	    	return 0;
+	    }
+	    public void stop() {
+	    	this.stop = true;
 	    }
 	}
 	
